@@ -37,16 +37,19 @@ extern void pilot_start_move(move my_move)
 						
 					case LEFT:
 						robot_set_speed(-my_move.speed, my_move.speed);
+						reference_wheel = LEFT_WHEEL;
 						target_pos = ANGLE_STEP;
 						break;
 						
 					case RIGHT:
 						robot_set_speed(my_move.speed, -my_move.speed);
+						reference_wheel = RIGHT_WHEEL;
 						target_pos = ANGLE_STEP;
 						break;
 												
 					case U_TURN:
 						robot_set_speed(-my_move.speed, my_move.speed);
+						reference_wheel = LEFT_WHEEL;
 						target_pos = 2*ANGLE_STEP;
 						break;
 				}
@@ -84,9 +87,12 @@ extern move_status pilot_stop_at_target(void)
 	
 	if( my_status.center_sensor < SENSOR_THRESHOLD)
 	{
+		TRACE("OBSTACLE");
+		robot_reset_wheel_pos();
+		robot_set_speed(0, 0);
 		robot_moving = OBSTACLE;
 	}
-	if( robot_moving && abs(robot_get_wheel_position(LEFT_WHEEL)) >= target_pos)
+	if( robot_moving && abs(robot_get_wheel_position(reference_wheel)) >= target_pos)
 	{
 		robot_reset_wheel_pos();
 		robot_set_speed(0, 0);
@@ -99,71 +105,4 @@ extern move_status pilot_stop_at_target(void)
 extern move_status pilot_get_status(void)
 {
 	return robot_moving;
-}
-
-// Ajout pour la mission 5
-extern void pilot_kb_move(void){
-    move my_move;
-	char c; 
-
-	while(1){
-		c = getchar();
-		getchar();
-
-		if (emergency_stop && c != 'e') {
-       		fprintf(stdout,"Emergency stop active. Press '%c' to start again.\n", 'e');
-        	return;
-    	}
-
-    	switch(c){
-        	case 'z':
-            	my_move.type = FORWARD;
-            	my_move.speed = DEFAULT_SPEED; 
-				pilot_start_move(my_move);
-            	break;
-			/*
-        	case 's':
-				my_move.type = ROTATION;
-				my_move.range.angle = U_TURN;
-				my_move.speed = DEFAULT_SPEED; 
-				pilot_start_move(my_move); 
-				break;
-			*/
-
-			case 'q':
-				my_move.type = ROTATION;
-				my_move.range.angle = LEFT;
-				my_move.speed = DEFAULT_SPEED; 
-				pilot_start_move(my_move); 
-				break;
-
-			case 'd':
-				my_move.type = ROTATION;
-				my_move.range.angle = RIGHT;
-				my_move.speed = DEFAULT_SPEED; 
-				pilot_start_move(my_move); 
-				break;
-
-			case 'a':
-				my_move.type = NONE;
-				my_move.speed = 0;
-				emergency_stop = 1;
-				fprintf(stdout,"Emergency stop active\n");
-				break;
-			
-			case 'e' :
-				my_move.type = NONE;
-				my_move.speed = 0;
-				emergency_stop = 0;
-				break;
-
-
-			default:
-				fprintf(stdout,"Invalid key '%c' pressed\n", c);
-				return;
-		}
-
-		
-    }
-
 }
