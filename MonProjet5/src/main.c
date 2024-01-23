@@ -8,29 +8,21 @@
 #include <signal.h>
 #include <unistd.h>
 
+
 #include "robot_app/robot.h"
 #include "robot_app/pilot.h"
+#include "robot_app/pilotManuel.h"
 #include "robot_app/copilot.h"
 
 #define TEMPO	1000000
+#define POLLING_PERIOD	10000
 
-#define POLLING_PERIOD	5000
 							
 /* Custom type for process state management */
 typedef enum{
 	STOPPED = 0,
 	LIVE
 }process_state;
-
-static move path[6] =
-    {
-        {FORWARD, {20}, 20},
-        {ROTATION, {RIGHT}, 20},
-        {FORWARD, {20}, 20},
-        {ROTATION, {LEFT}, 20},
-		{FORWARD, {20}, 20},
-        {ROTATION, {U_TURN}, 20},
-	};
 
 static void robot_loop(void);
 
@@ -56,7 +48,7 @@ int main (void)
 	/* Interception d'un Ctrl+C pour arrêter le programme proprement. */
 	signal(SIGINT, sigint_handler);
 	
-	/* Manipulation du robot. */
+	/* Procédure hello de manipulation du robot. */
 	robot_loop();
 
 	/* Arrêt du robot. */
@@ -65,21 +57,29 @@ int main (void)
 	return EXIT_SUCCESS;
 }
 
+/**
+ * Robot control function 
+ *
+ * Send commands to the robot using the keyboard and display status data with a specific period
+ */
+
 static void robot_loop()
 {
 	robot_status my_status;
-	my_status = robot_get_status();
 	
+	
+	int step_counter = 0;	
+	char c;
+
 	while(running)
-	{
-		
-		//fprintf(stdout, "codeurs: g = %d, d = %d\n", my_status.left_encoder, my_status.right_encoder);
-		//fprintf(stdout, "proxy: g = %d, c = %d, d = %d\n", my_status.left_sensor, my_status.center_sensor, my_status.right_sensor);
-		//fprintf(stdout, "batterie: %d %%\n", my_status.battery);
-		
-		for(int i=0;i<TEMPO/POLLING_PERIOD;i++)
+	{	
+		my_status = robot_get_status();
+		pilotManuel_kb_move();
+
+		for(int i=0;i<200;i++)
 		{
-			pilot_kb_move();
+			usleep(POLLING_PERIOD);
+			pilot_stop_at_target();
 		}
 	}
 }
